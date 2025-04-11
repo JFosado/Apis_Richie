@@ -1,0 +1,39 @@
+# Ignorar entornos virtuales
+EntornoV-API/
+/EntornoV-API
+venvLinux/
+venv/
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+*.pyoP
+*.pyd
+
+# Archivos de dependencias
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Configuración de entornos y archivos de credenciales
+.env
+*.env
+
+# Archivos de bases de datos locales
+*.sqlite3
+db.sqlite3
+
+# Archivos de logs
+logs/
+*.log
+
+# Archivos de caché y de depuración
+*.swp
+*.swo
+*.bak
+.DS_Store
+Thumbs.db
+
+# Archivos de dependencias de Node.js (si usas npm o yarn)
+node_modules/
+package-lock.json
+yarn.lock
