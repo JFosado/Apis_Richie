@@ -3,8 +3,9 @@ from pydantic import BaseModel, Field
 from datetime import datetime, date
 from uuid import UUID
 
-# 🔹 Base común
+
 class PersonBase(BaseModel):
+    """Campos base para una persona."""
     Titulo_Cortesia: Optional[str] = Field(None, example="Dr.")
     Nombre: str = Field(..., example="Carlos")
     Primer_Apellido: str = Field(..., example="Ramírez")
@@ -20,15 +21,13 @@ class PersonBase(BaseModel):
     Fecha_Registro: Optional[datetime] = Field(None, example="2025-03-21T22:19:44.610Z")
     Fecha_Actualizacion: Optional[datetime] = Field(None, example="2025-03-21T22:19:44.610Z")
 
-# 🔹 Crear persona
+
 class PersonCreate(PersonBase):
-    """Modelo para la creación de una persona"""
-    pass
+    """Modelo para la creación de una persona."""
 
-# 🔹 Actualizar persona (parcial)
+
 class PersonUpdate(BaseModel):
-    """Modelo para la actualización de una persona (parcial)"""
-
+    """Modelo para la actualización de una persona (parcial)."""
     Titulo_Cortesia: Optional[str] = Field(None, example="Dr.")
     Nombre: Optional[str] = Field(None, example="Carlos")
     Primer_Apellido: Optional[str] = Field(None, example="Ramírez")
@@ -43,9 +42,9 @@ class PersonUpdate(BaseModel):
     Estatus: Optional[bool] = Field(None, example=True)
     Fecha_Actualizacion: Optional[datetime] = Field(None, example="2025-03-21T22:19:44.610Z")
 
-# 🔹 Modelo de respuesta
+
 class Person(PersonBase):
-    """Modelo para la respuesta al consultar una persona"""
+    """Modelo de respuesta para la entidad persona."""
     ID: UUID = Field(..., example="3fa85f64-5717-4562-b3fc-2c963f66afa6")
 
     class Config:

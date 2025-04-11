@@ -1,106 +1,57 @@
+"""Rutas protegidas para Servicios Médicos."""
+
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-import crud.servicios_medicos, config.db, schemas.servicios_medicos, models.servicios_medicos
 from typing import List
-from portadortoken import Portador  # 🔐 Protección JWT
+import crud.servicios_medicos as crud
+import schemas.servicios_medicos as schemas
+from config.db import SessionLocal
+from portadortoken import Portador
 
-serviceM = APIRouter()
+router = APIRouter()
 
-models.servicios_medicos.Base.metadata.create_all(bind=config.db.engine)
 
 def get_db():
-    db = config.db.SessionLocal()
+    db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-# 🔒 Rutas protegidas con JWT
-@serviceM.get(
-    "/servicios_medicos/",
-    response_model=List[schemas.servicios_medicos.Service],
-    tags=["Servicios Médicos"],
-    dependencies=[Depends(Portador())],
-    summary="Listar servicios médicos",
-    description="""
-Devuelve una lista paginada de todos los servicios médicos registrados.
 
-- Protegido por token JWT.
-- Puedes usar parámetros `skip` y `limit` para paginar resultados.
-"""
-)
-def read_servicesM(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
-    return crud.servicios_medicos.get_servicesM(db=db, skip=skip, limit=limit)
+@router.get("/servicios_medicos/", response_model=List[schemas.ServiceMResponse], tags=["Servicios Médicos"], dependencies=[Depends(Portador())])
+def read_services_m(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    return crud.get_services_m(db=db, skip=skip, limit=limit)
 
-@serviceM.get(
-    "/servicios_medicos/{id}",
-    response_model=schemas.servicios_medicos.Service,
-    tags=["Servicios Médicos"],
-    dependencies=[Depends(Portador())],
-    summary="Consultar servicio médico por ID",
-    description="""
-Obtiene los detalles de un servicio médico específico a partir de su ID.
 
-- Retorna error 404 si el servicio no existe.
-"""
-)
-def read_serviceM(id: str, db: Session = Depends(get_db)):
-    db_serviceM = crud.servicios_medicos.get_serviceM(db=db, id=id)
-    if db_serviceM is None:
+@router.get("/servicios_medicos/{id}", response_model=schemas.ServiceMResponse, tags=["Servicios Médicos"], dependencies=[Depends(Portador())])
+def read_service_m(id: str, db: Session = Depends(get_db)):
+    db_service = crud.get_service_m(db=db, service_id=id)
+    if db_service is None:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
-    return db_serviceM
+    return db_service
 
-@serviceM.post(
-    "/servicios_medicos/",
-    response_model=schemas.servicios_medicos.Service,
-    tags=["Servicios Médicos"],
-    dependencies=[Depends(Portador())],
-    summary="Crear nuevo servicio médico",
-    description="""
-Registra un nuevo servicio médico en el sistema.
 
-- Verifica que no exista un servicio con el mismo nombre.
-- Retorna el servicio creado.
-"""
-)
-def create_serviceM(service: schemas.servicios_medicos.ServiceMCreate, db: Session = Depends(get_db)):
-    db_serviceM = crud.servicios_medicos.get_serviceM_by_nombre(db, nombre=service.nombre)
-    if db_serviceM:
-        raise HTTPException(status_code=400, detail="Servicio existente, intenta nuevamente")
-    return crud.servicios_medicos.create_serviceM(db=db, service=service)
+@router.post("/servicios_medicos/", response_model=schemas.ServiceMResponse, tags=["Servicios Médicos"], dependencies=[Depends(Portador())])
+def create_service_m(service: schemas.ServiceMCreate, db: Session = Depends(get_db)):
+    db_service = crud.get_service_m_by_nombre(db, nombre=service.nombre)
+    if db_service:
+        raise HTTPException(status_code=400, detail="Servicio ya registrado")
+    return crud.create_service_m(db=db, service=service)
 
-@serviceM.put(
-    "/servicios_medicos/{id}",
-    response_model=schemas.servicios_medicos.Service,
-    tags=["Servicios Médicos"],
-    dependencies=[Depends(Portador())],
-    summary="Actualizar servicio médico",
-    description="""
-Actualiza los datos de un servicio médico existente por su ID.
 
-- Retorna error 404 si el servicio no existe.
-"""
-)
-def update_serviceM(id: str, service: schemas.servicios_medicos.ServiceMUpdate, db: Session = Depends(get_db)):
-    db_serviceM = crud.servicios_medicos.update_serviceM(db=db, id=id, service=service)
-    if db_serviceM is None:
+@router.put("/servicios_medicos/{id}", response_model=schemas.ServiceMResponse, tags=["Servicios Médicos"], dependencies=[Depends(Portador())])
+def update_service_m(id: str, service: schemas.ServiceMUpdate, db: Session = Depends(get_db)):
+    db_service = crud.update_service_m(db=db, service_id=id, service=service)
+    if db_service is None:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
-    return db_serviceM
+    return db_service
 
-@serviceM.delete(
-    "/servicios_medicos/{id}",
-    response_model=schemas.servicios_medicos.Service,
-    tags=["Servicios Médicos"],
-    dependencies=[Depends(Portador())],
-    summary="Eliminar servicio médico",
-    description="""
-Elimina un servicio médico registrado según su ID.
 
-- Retorna error 404 si el servicio no se encuentra.
-"""
-)
-def delete_serviceM(id: str, db: Session = Depends(get_db)):
-    db_serviceM = crud.servicios_medicos.delete_serviceM(db=db, id=id)
-    if db_serviceM is None:
+@router.delete("/servicios_medicos/{id}", response_model=schemas.ServiceMResponse, tags=["Servicios Médicos"], dependencies=[Depends(Portador())])
+def delete_service_m(id: str, db: Session = Depends(get_db)):
+    db_service = crud.delete_service_m(db=db, service_id=id)
+    if db_service is None:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
-    return db_serviceM
+    return db_service
+serviceM = router

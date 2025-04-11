@@ -1,10 +1,7 @@
-"""Esquemas Pydantic para la entidad Paciente."""
-
 from datetime import datetime
 from typing import Optional
 from enum import Enum
 from pydantic import BaseModel
-
 
 class EstatusVidaEnum(str, Enum):
     """Enumeración del estatus de vida del paciente."""
@@ -12,7 +9,6 @@ class EstatusVidaEnum(str, Enum):
     FINADO = "Finado"
     COMA = "Coma"
     VEGETATIVO = "Vegetativo"
-
 
 class PacienteBase(BaseModel):
     """Campos base para un paciente."""
@@ -24,10 +20,8 @@ class PacienteBase(BaseModel):
     Estatus_vida: Optional[EstatusVidaEnum] = None
     Estatus: Optional[bool] = True
 
-
 class PacienteCreate(PacienteBase):
     """Esquema para la creación de un paciente."""
-
 
 class PacienteUpdate(BaseModel):
     """Esquema para la actualización de un paciente."""
@@ -39,7 +33,6 @@ class PacienteUpdate(BaseModel):
     Estatus_vida: Optional[EstatusVidaEnum] = None
     Estatus: Optional[bool] = None
     Fecha_Actualizacion: Optional[datetime] = None
-
 
 class PacienteResponse(PacienteBase):
     """Esquema de respuesta para un paciente."""

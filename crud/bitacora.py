@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from models import bitacora as models_bitacora
-from schemas import bitacora as schemas_bitacora
+from schemas.servicios_medicos import bitacora as schemas_bitacora
 
 def get_bitacora(db: Session, id: int):
     return db.query(models_bitacora.Bitacora).filter(models_bitacora.Bitacora.ID == id).first()

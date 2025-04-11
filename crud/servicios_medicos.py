@@ -1,73 +1,63 @@
-import models.servicios_medicos
-import schemas.servicios_medicos
+"""CRUD para operaciones relacionadas con servicios médicos."""
+
+from datetime import datetime
 from sqlalchemy.orm import Session
+import models.servicios_medicos as models
+import schemas.servicios_medicos as schemas
 
-# 🔹 Obtener un servicio médico por ID
-def get_serviceM(db: Session, id: str):
-    """
-    Retorna un servicio médico por su ID.
-    """
-    return db.query(models.servicios_medicos.ServiceM).filter(
-        models.servicios_medicos.ServiceM.id == id
-    ).first()
 
-# 🔹 Obtener un servicio médico por su nombre exacto
-def get_serviceM_by_nombre(db: Session, nombre: str):
-    """
-    Retorna el servicio médico que coincida exactamente con el nombre proporcionado.
-    """
-    return db.query(models.servicios_medicos.ServiceM).filter(
-        models.servicios_medicos.ServiceM.nombre == nombre
-    ).first()
+def get_service_m(db: Session, service_id: str):
+    return db.query(models.ServiceM).filter(models.ServiceM.id == service_id).first()
 
-# 🔹 Obtener todos los servicios médicos registrados (con paginación)
-def get_servicesM(db: Session, skip: int = 0, limit: int = 10):
-    """
-    Retorna una lista de servicios médicos con paginación.
-    """
-    return db.query(models.servicios_medicos.ServiceM).offset(skip).limit(limit).all()
 
-# 🔹 Crear un nuevo servicio médico
-def create_serviceM(db: Session, service: schemas.servicios_medicos.ServiceMCreate):
-    """
-    Crea y guarda un nuevo servicio médico en la base de datos.
-    """
-    db_serviceM = models.servicios_medicos.ServiceM(
+def get_service_m_by_nombre(db: Session, nombre: str):
+    return db.query(models.ServiceM).filter(models.ServiceM.nombre == nombre).first()
+
+
+def get_services_m(db: Session, skip: int = 0, limit: int = 10):
+    return db.query(models.ServiceM).offset(skip).limit(limit).all()
+
+
+def create_service_m(db: Session, service: schemas.ServiceMCreate):
+    db_service = models.ServiceM(
         nombre=service.nombre,
         descripcion=service.descripcion,
         observaciones=service.observaciones,
-        fecha_registro=service.fecha_registro,
-        fecha_actualizacion=service.fecha_actualizacion
+        costo_servicio=service.costo_servicio,
+        fecha_registro=datetime.utcnow(),
     )
-    db.add(db_serviceM)
-    db.commit()
-    db.refresh(db_serviceM)
-    return db_serviceM
+    db.add(db_service)
+    try:
+        db.commit()
+        db.refresh(db_service)
+    except Exception as exc:
+        db.rollback()
+        raise exc
+    return db_service
 
-# 🔹 Actualizar los datos de un servicio médico por ID
-def update_serviceM(db: Session, id: str, service: schemas.servicios_medicos.ServiceMUpdate):
-    """
-    Actualiza solo los campos proporcionados de un servicio médico existente.
-    """
-    db_serviceM = db.query(models.servicios_medicos.ServiceM).filter(
-        models.servicios_medicos.ServiceM.id == id
-    ).first()
-    if db_serviceM:
+
+def update_service_m(db: Session, service_id: str, service: schemas.ServiceMUpdate):
+    db_service = db.query(models.ServiceM).filter(models.ServiceM.id == service_id).first()
+    if db_service:
         for key, value in service.model_dump(exclude_unset=True).items():
-            setattr(db_serviceM, key, value)
-        db.commit()
-        db.refresh(db_serviceM)
-    return db_serviceM
+            setattr(db_service, key, value)
+        db_service.fecha_actualizacion = datetime.utcnow()
+        try:
+            db.commit()
+            db.refresh(db_service)
+        except Exception as exc:
+            db.rollback()
+            raise exc
+    return db_service
 
-# 🔹 Eliminar un servicio médico por ID
-def delete_serviceM(db: Session, id: str):
-    """
-    Elimina un servicio médico de la base de datos si existe.
-    """
-    db_serviceM = db.query(models.servicios_medicos.ServiceM).filter(
-        models.servicios_medicos.ServiceM.id == id
-    ).first()
-    if db_serviceM:
-        db.delete(db_serviceM)
-        db.commit()
-    return db_serviceM
+
+def delete_service_m(db: Session, service_id: str):
+    db_service = db.query(models.ServiceM).filter(models.ServiceM.id == service_id).first()
+    if db_service:
+        try:
+            db.delete(db_service)
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            raise exc
+    return db_service

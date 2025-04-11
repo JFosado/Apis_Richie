@@ -1,31 +1,29 @@
-from typing import List,Union
-from pydantic import BaseModel, Field
+from typing import Optional
+from pydantic import BaseModel
 from datetime import datetime
 from decimal import Decimal
 from models.personal_medico import EnumTipoPersonal, EnumEstatus
 
 
 class PersonalMedicoBase(BaseModel):
+    """Campos base para un registro de personal médico."""
     Persona_ID: int
     Departamento_ID: int
     Cedula_Profesional: str
     Tipo: EnumTipoPersonal
     Especialidad: str
-    Fecha_Registro: datetime
     Fecha_Contratacion: datetime
-    Fecha_Termino_Contrato : datetime 
+    Fecha_Termino_Contrato: datetime
     Salario: Decimal
     Estatus: EnumEstatus
-    Fecha_Actualizacion: datetime 
 
-    
-    
+
 class PersonalMedicoCreate(PersonalMedicoBase):
-    pass
-class PersonalMedicoUpdate(PersonalMedicoBase):
-    pass
-class PersonalMedico(PersonalMedicoBase):
-    Persona_ID: int
+    """Esquema para la creación de un registro de personal médico."""
 
-    class Config:
-        orm_mode = True
+
+class PersonalMedicoUpdate(BaseModel):
+    """Esquema para la actualización parcial de un registro de personal médico."""
+    Departamento_ID: Optional[int] = None
+    Cedula_Profesional: Optional[str] = None
+    Tipo: Optional[EnumTipoPersonal]

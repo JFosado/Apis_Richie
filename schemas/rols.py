@@ -1,25 +1,32 @@
-from typing import List, Union
+from typing import Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
+from uuid import UUID
+
 
 class RolBase(BaseModel):
-    Nombre: str = Field(..., example="Administrador")  # Nombre del rol del sistema
-    Descripcion: str = Field(..., example="Acceso completo a todos los módulos del sistema")  # Descripción del rol
-    Estatus: bool = Field(..., example=True)  # Estado del rol: True = Activo, False = Inactivo
-    Fecha_Registro: datetime = Field(..., example="2025-03-21T22:19:44.610Z")  # Fecha de creación
-    Fecha_Actualizacion: datetime = Field(..., example="2025-04-01T10:00:00.000Z")  # Última modificación
+    Nombre: str = Field(..., example="Administrador")
+    Descripcion: Optional[str] = Field(None, example="Acceso completo a todos los módulos del sistema")
+    Estatus: bool = Field(..., example=True)
+
 
 class RolCreate(RolBase):
-    """Modelo para la creación de un rol"""
-    pass
+    """Modelo para la creación de un rol."""
 
-class RolUpdate(RolBase):
-    """Modelo para la actualización de un rol"""
-    pass
+
+class RolUpdate(BaseModel):
+    """Modelo para la actualización parcial de un rol."""
+    Nombre: Optional[str] = None
+    Descripcion: Optional[str] = None
+    Estatus: Optional[bool] = None
+    Fecha_Actualizacion: Optional[datetime] = None
+
 
 class Rol(RolBase):
-    """Modelo para la respuesta al consultar un rol"""
-    ID: str = Field(..., example="f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    """Modelo de respuesta para un rol."""
+    ID: UUID = Field(..., example="f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    Fecha_Registro: Optional[datetime] = Field(None, example="2025-03-21T22:19:44.610Z")
+    Fecha_Actualizacion: Optional[datetime] = Field(None, example="2025-04-01T10:00:00.000Z")
 
     class Config:
-        orm_mode = True
+        from_attributes = True

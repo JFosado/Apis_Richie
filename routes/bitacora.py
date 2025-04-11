@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-import crud.bitacora, config.db, schemas.serviciosMedicos.bitacora, models.bitacora
+import crud.bitacora, config.db, models.bitacora
 from typing import List
 from cryptography.fernet import Fernet
 from portadortoken import Portador

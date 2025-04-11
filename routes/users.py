@@ -1,119 +1,120 @@
-from fastapi import APIRouter, HTTPException, Depends
+"""Rutas para gestión de usuarios protegidas con JWT."""
+
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-import crud.users, config.db, schemas.users, models.users
-from typing import List
+from config import db as db_config
+from crud import users as crud_users
+from models import users as model_users
+from schemas import users as user_schema
 from jwt_config import solicita_token
-from portadortoken import Portador  # ✅ Se usa para proteger rutas
+from portadortoken import Portador
 
-users_router = APIRouter()  # ✅ Renombrado para evitar conflictos
+users_router = APIRouter()
 
-models.users.Base.metadata.create_all(bind=config.db.engine)
+model_users.Base.metadata.create_all(bind=db_config.engine)
+
 
 def get_db():
-    db = config.db.SessionLocal()
+    """Provee una sesión de base de datos."""
+    database = db_config.SessionLocal()
     try:
-        yield db
+        yield database
     finally:
-        db.close()
+        database.close()
 
-# 🔹✅ Ruta NO protegida para registrar usuarios
+
 @users_router.post(
     "/users/",
-    response_model=schemas.users.User,
+    response_model=user_schema.User,
     tags=["Usuarios"],
-    summary="Crear usuario",
-    description="""
-Registra un nuevo usuario en el sistema.
-
-- Valida si el `Nombre_Usuario` ya existe.
-- Requiere un objeto `UserCreate` con datos válidos.
-- Retorna el usuario creado.
-"""
+    dependencies=[Depends(Portador())],
+    summary="Crear usuario"
 )
-def create_user(user: schemas.users.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.users.get_user_by_usuario(db, usuario=user.Nombre_Usuario)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Usuario existente intenta nuevamente")
-    return crud.users.create_user(db=db, user=user)
+def create_user(user: user_schema.UserCreate, db: Session = Depends(get_db)):
+    """Crea un nuevo usuario si no existe el nombre."""
+    existing_user = crud_users.get_user_by_username(db, username=user.nombre_usuario)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Usuario ya existe")
+    return crud_users.create_user(db=db, user=user)
 
-# 🔹✅ Ruta NO protegida para iniciar sesión
+
 @users_router.post(
     "/login/",
     tags=["User Login"],
-    summary="Iniciar sesión",
-    description="""
-Verifica las credenciales del usuario por nombre, correo o teléfono y contraseña.
-
-- Si las credenciales son correctas, retorna un JWT.
-- Si son incorrectas, retorna "Acceso denegado".
-"""
+    summary="Iniciar sesión"
 )
-def read_credentials(usuario: schemas.users.UserLogin, db: Session = Depends(get_db)):
-    db_credentials = crud.users.get_user_by_creentials(
-        db, 
-        username=usuario.Nombre_Usuario, 
-        correo=usuario.Correo_Electronico, 
-        telefono=usuario.Numero_Telefonico_Movil, 
-        password=usuario.Contrasena
+def read_credentials(user: user_schema.UserLogin, db: Session = Depends(get_db)):
+    """Valida credenciales y retorna JWT si son válidas."""
+    db_user = crud_users.get_user_by_credentials(
+        db,
+        username=user.nombre_usuario,
+        correo=user.correo_electronico,
+        telefono=user.numero_telefonico_movil,
+        password=user.contrasena
     )
-    if db_credentials is None:
-        return JSONResponse(content={'mensaje': 'Acceso denegado'}, status_code=404)
+    if not db_user:
+        return JSONResponse(content={"mensaje": "Acceso denegado"}, status_code=404)
 
-    token: str = solicita_token(usuario.model_dump())  
-    return JSONResponse(status_code=200, content={"token": token})
+    token = solicita_token(user.model_dump())
+    return JSONResponse(content={"token": token}, status_code=200)
 
-# 🔹🚀 Rutas protegidas con JWT (Solo accesibles con token)
+
 @users_router.get(
     "/users/",
-    response_model=List[schemas.users.User],
+    response_model=List[user_schema.User],
     tags=["Usuarios"],
     dependencies=[Depends(Portador())],
-    summary="Listar usuarios",
-    description="Obtiene una lista paginada de todos los usuarios registrados."
+    summary="Listar usuarios"
 )
 def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    db_users = crud.users.get_users(db=db, skip=skip, limit=limit)
-    return db_users
+    """Devuelve lista paginada de usuarios."""
+    return crud_users.get_users(db=db, skip=skip, limit=limit)
 
-@users_router.post(
-    "/user/{id}",
-    response_model=schemas.users.User,
+
+@users_router.get(
+    "/user/{user_id}",
+    response_model=user_schema.User,
     tags=["Usuarios"],
     dependencies=[Depends(Portador())],
-    summary="Consultar usuario por ID",
-    description="Retorna la información del usuario correspondiente al ID proporcionado."
+    summary="Consultar usuario por ID"
 )
-def read_user(id: str, db: Session = Depends(get_db)):
-    db_user = crud.users.get_user(db=db, id=id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+def read_user(user_id: str, db: Session = Depends(get_db)):
+    """Consulta un usuario por ID."""
+    user = crud_users.get_user(db=db, user_id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return user
+
 
 @users_router.put(
-    "/user/{id}",
-    response_model=schemas.users.User,
+    "/user/{user_id}",
+    response_model=user_schema.User,
     tags=["Usuarios"],
     dependencies=[Depends(Portador())],
-    summary="Actualizar usuario",
-    description="Actualiza los datos de un usuario existente por su ID."
+    summary="Actualizar usuario"
 )
-def update_user(id: str, user: schemas.users.UserUpdate, db: Session = Depends(get_db)):
-    db_user = crud.users.update_user(db=db, id=id, user=user)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="Usuario no existe, no actualizado")
-    return db_user
+def update_user(user_id: str, user: user_schema.UserUpdate, db: Session = Depends(get_db)):
+    """Actualiza los datos de un usuario existente."""
+    updated = crud_users.update_user(db=db, user_id=user_id, user=user)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Usuario no actualizado")
+    return updated
+
 
 @users_router.delete(
-    "/user/{id}",
-    response_model=schemas.users.User,
+    "/user/{user_id}",
+    response_model=user_schema.User,
     tags=["Usuarios"],
     dependencies=[Depends(Portador())],
-    summary="Eliminar usuario",
-    description="Elimina un usuario del sistema por su ID."
+    summary="Eliminar usuario"
 )
-def delete_user(id: str, db: Session = Depends(get_db)):
-    db_user = crud.users.delete_user(db=db, id=id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="Usuario no existe, no se pudo eliminar")
-    return db_user
+def delete_user(user_id: str, db: Session = Depends(get_db)):
+    """Elimina un usuario existente."""
+    deleted = crud_users.delete_user(db=db, user_id=user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Usuario no eliminado")
+    return deleted
+
+users = users_router
