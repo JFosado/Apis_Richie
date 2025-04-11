@@ -1,26 +1,41 @@
-from sqlalchemy import Column,Integer,String,Boolean,DateTime,ForeignKey,Enum
-from sqlalchemy.dialects.mysql import LONGTEXT
+"""Modelo SQLAlchemy para la entidad Expediente."""
+
+import enum
+from sqlalchemy import Column, Integer, Text, Date, ForeignKey, Enum as SqlEnum
 from sqlalchemy.orm import relationship
 from config.db import Base
-import models.persons
-import enum
+from datetime import datetime
 
-class MyEstatusExpediente(enum.Enum):
-    activo = "Activo"
-    inactivo = "Inactivo"
-    bloqueado = "Bloqueado"
-    suspendido = "Suspendido"
+
+class EstatusHabitosEnum(enum.Enum):
+    NINGUNO = "ninguno"
+    OCASIONAL = "ocasional"
+    FRECUENTE = "frecuente"
+
+
+class EstatusActividadFisicaEnum(enum.Enum):
+    NULA = "nula"
+    MODERADA = "moderada"
+    INTENSA = "intensa"
+
 
 class Expediente(Base):
-    __tablename__ = "tbb_expediente"
-    
-    ID = Column(Integer, primary_key=True, index=True)
-    Persona_ID = Column(String(36), ForeignKey("tbb_personas.ID"))
-    Hora_Consulta = Column(DateTime)
-    Diagnostico = Column(String(255))
-    Tratamiento_Relacionado = Column(String(255))
-    Observaciones = Column(String(255))
-    Estatus = Column(Enum(MyEstatusExpediente))
-    Fecha_Registro = Column(DateTime)
-    Fecha_Actualizacion = Column(DateTime)
+    __tablename__ = "tbb_expedientes"
 
+    id_expediente = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id_paciente = Column(Integer, ForeignKey("tbb_pacientes.ID"), nullable=False)
+    id_medico_responsable = Column(Integer, ForeignKey("tbb_personal_medico.Persona_ID"), nullable=False)
+    fecha_creacion = Column(Date, nullable=False, default=datetime.utcnow)
+
+    antecedentes_personales = Column(Text)
+    antecedentes_familiares = Column(Text)
+    alergias = Column(Text)
+    vacunas = Column(Text)
+
+    habitos_tabaquismo = Column(SqlEnum(EstatusHabitosEnum), default=EstatusHabitosEnum.NINGUNO)
+    habitos_alcohol = Column(SqlEnum(EstatusHabitosEnum), default=EstatusHabitosEnum.NINGUNO)
+    habitos_drogas = Column(SqlEnum(EstatusHabitosEnum), default=EstatusHabitosEnum.NINGUNO)
+    actividad_fisica = Column(SqlEnum(EstatusActividadFisicaEnum), default=EstatusActividadFisicaEnum.MODERADA)
+
+    paciente = relationship("Paciente", back_populates="expedientes")
+    medico_responsable = relationship("PersonalMedico", back_populates="expedientes")
